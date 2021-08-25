@@ -1,0 +1,22 @@
+server:
+  port: 9000
+  servlet:
+    context-path: /advertise
+spring:
+  application:
+    name: login-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/advertise
+    username: root
+    password: root
+  jpa:
+    hibernate:
+     ddl-auto: update
+    properties:
+      hibernate:
+        dialect : org.hibernate.dialect.MySQL5InnoDBDialect
+        namingStrategy: org.hibernate.cfg.PhysicalNamingStrategy
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    show-sql: true

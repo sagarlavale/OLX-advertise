@@ -3,6 +3,9 @@ package com.zensar.advertise.service;
 import com.zensar.advertise.dto.AdvertiseRequestDto;
 import org.springframework.http.ResponseEntity;
 
+import java.awt.print.Pageable;
+import java.util.Date;
+
 public interface AdvertiseService {
 	
 	ResponseEntity<?> post(String token, AdvertiseRequestDto requestDto);
@@ -15,9 +18,9 @@ public interface AdvertiseService {
 
 	ResponseEntity<?> get(String token, Integer postId);
 
-	ResponseEntity<?> searchOnCriteria(String searchText);
-
 	ResponseEntity<?> search(String searchText);
 
 	ResponseEntity<?> delete(String token, Integer postId);
+
+	ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price, String createdDate,String sortBy, String order);
 }

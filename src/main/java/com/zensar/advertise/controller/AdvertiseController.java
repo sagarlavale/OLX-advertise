@@ -9,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+
 @RestController
 @RequestMapping(value = "/ad")
 @CrossOrigin("*")
@@ -53,13 +55,6 @@ public class AdvertiseController {
 		return advertiseService.get(token,postId);
 	}
 	
-	@GetMapping(value = "/search/status/{searchText}" ,produces = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE})
-	@ApiOperation(value = "Search By Criteria", notes =  "This Service Returns List of Ads based on Particular Search Criteria from OLX Application")
-	@ResponseBody
-	public ResponseEntity<?> searchStatus(@ApiParam(value = "Search Criteria", required = true) @PathVariable String searchText) {
-		return advertiseService.searchOnCriteria(searchText);
-	}
-	
 	@GetMapping(value = "/search/{searchText}" , produces = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE})
 	@ApiOperation(value = "Search", notes =  "This Service Returns List of Ads based on Search Text from OLX Application")
 	@ResponseBody
@@ -72,6 +67,22 @@ public class AdvertiseController {
 	@ResponseBody
 	public ResponseEntity<?> delete(@RequestHeader("Authorization") String token,@ApiParam(value = "Post ID", required = true)@PathVariable Integer postId) {
 		return advertiseService.delete(token,postId);
+	}
+
+	@GetMapping(value = "/search/filter" ,produces = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE})
+	@ApiOperation(value = "Search By Criteria", notes =  "This Service Returns List of Ads based on Particular Search Criteria from OLX Application")
+	@ResponseBody
+	public ResponseEntity<?> findAll( @RequestParam(required = false) String title,
+									  @RequestParam(required = false) String postedBy,
+									  @RequestParam(required = false) Integer category,
+									  @RequestParam(required = false) Integer status,
+									  @RequestParam(required = false) Double price,
+									  @RequestParam(required = false) String createdDate,
+									  @RequestParam(required = false) String sortBy,
+									  @RequestParam(required = false) String order,
+									  @RequestParam(defaultValue = "0") int page,
+									  @RequestParam(defaultValue = "3") int size) {
+		return advertiseService.findAll(page,size,title,postedBy,category,status,price,createdDate,sortBy,order);
 	}
 
 }

@@ -4,7 +4,7 @@ server:
     context-path: /advertise
 spring:
   application:
-    name: login-service
+    name: advertise-service
   datasource:
     url: jdbc:mysql://localhost:3306/advertise
     username: root
@@ -20,3 +20,12 @@ spring:
           lob:
             non_contextual_creation: true
     show-sql: true
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.uuid}
+    hostname: localhost
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:8761/eureka

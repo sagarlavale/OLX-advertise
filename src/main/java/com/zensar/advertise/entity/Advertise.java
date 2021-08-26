@@ -18,7 +18,7 @@ public class Advertise extends BaseEntity{
     private String title;
 
     @Column(name = "price")
-    private double price;
+    private Double price;
 
     @Column(name = "category")
     private Integer category;

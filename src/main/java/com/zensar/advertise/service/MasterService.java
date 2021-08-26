@@ -1,7 +1,9 @@
 package com.zensar.advertise.service;
 
 import com.zensar.advertise.dto.CategoryDto;
+import com.zensar.advertise.dto.CategoryListDto;
 import com.zensar.advertise.dto.StatusDto;
+import com.zensar.advertise.dto.StatusListDto;
 
 public interface MasterService {
 
@@ -10,4 +12,8 @@ public interface MasterService {
     StatusDto getStatus(Integer id);
 
     CategoryDto getCategory(Integer id);
+
+    CategoryListDto getCategories();
+
+    StatusListDto getStatuses();
 }

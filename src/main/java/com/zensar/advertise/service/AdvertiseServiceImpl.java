@@ -9,13 +9,18 @@ import com.zensar.advertise.exception.StatusNotFoundException;
 import com.zensar.advertise.mapper.AdvertiseMapper;
 import com.zensar.advertise.repository.AdvertiseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -46,18 +51,6 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		{
 			throw new InvalidTokenException(token);
 		}
-		Advertise advertise = advertiseMapper.toAdvertise(requestDto);
-
-		advertise.setCategory(requestDto.getCategoryId());
-
-		advertise.setStatus(requestDto.getStatusId());
-
-		advertise.setCreatedById(userDto.getId());
-		advertise.setCreatedBy(userDto.getFirstName()+userDto.getLastName());
-		advertise.setUpdatedById(userDto.getId());
-		advertise.setUpdatedBy(userDto.getFirstName()+userDto.getLastName());
-
-		AdvertiseResponseDto advertiseResponseDto = advertiseMapper.toAdvertiseResponseDto(advertiseRepository.save(advertise));
 
 		try {
 			categoryDto = masterService.getCategory(requestDto.getCategoryId());
@@ -74,6 +67,20 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		{
 			throw new StatusNotFoundException(requestDto.getStatusId());
 		}
+
+		Advertise advertise = advertiseMapper.toAdvertise(requestDto);
+
+		advertise.setCategory(requestDto.getCategoryId());
+
+		advertise.setStatus(requestDto.getStatusId());
+
+		advertise.setCreatedById(userDto.getId());
+		advertise.setCreatedBy(userDto.getFirstName()+userDto.getLastName());
+		advertise.setUpdatedById(userDto.getId());
+		advertise.setUpdatedBy(userDto.getFirstName()+userDto.getLastName());
+
+		AdvertiseResponseDto advertiseResponseDto = advertiseMapper.toAdvertiseResponseDto(advertiseRepository.save(advertise));
+
 		advertiseResponseDto.setCategory(categoryDto.getCategory());
 		advertiseResponseDto.setStatus(statusDto.getStatus());
 
@@ -93,14 +100,6 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		{
 			throw new InvalidTokenException(token);
 		}
-
-		Advertise advertise = advertiseMapper.toAdvertise(requestDto);
-
-		advertise.setUpdatedById(userDto.getId());
-		advertise.setUpdatedBy(userDto.getFirstName()+userDto.getLastName());
-
-		AdvertiseResponseDto advertiseResponseDto = advertiseMapper.toAdvertiseResponseDto(advertiseRepository.save(advertise));
-
 		try {
 			categoryDto = masterService.getCategory(requestDto.getCategoryId());
 		}
@@ -116,6 +115,15 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		{
 			throw new StatusNotFoundException(requestDto.getStatusId());
 		}
+
+
+		Advertise advertise = advertiseMapper.toAdvertise(requestDto);
+
+		advertise.setUpdatedById(userDto.getId());
+		advertise.setUpdatedBy(userDto.getFirstName()+userDto.getLastName());
+
+		AdvertiseResponseDto advertiseResponseDto = advertiseMapper.toAdvertiseResponseDto(advertiseRepository.save(advertise));
+
 		advertiseResponseDto.setCategory(categoryDto.getCategory());
 		advertiseResponseDto.setStatus(statusDto.getStatus());
 
@@ -134,6 +142,7 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		{
 			throw new InvalidTokenException(token);
 		}
+
 		List<Advertise> advertiseList = advertiseRepository.findAllByUser(userDto.getId());
 
 		AdvertiseListDto advertiseListDto1 = new AdvertiseListDto();
@@ -233,6 +242,8 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		}
 	}
 
+
+
 	@Override
 	public ResponseEntity<?> get(String token, Integer postId) {
 		Optional<Advertise> optional = advertiseRepository.findById(postId);
@@ -270,85 +281,113 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 	}
 
 	@Override
-	public ResponseEntity<?> searchOnCriteria(String searchText) {
-		AdvertiseListDto list = new AdvertiseListDto();
-		CategoryDto categoryDto;
-		StatusDto statusDto;
-		List<Advertise> advertises = advertiseRepository.findAll();
-
-		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
-
-		for (Advertise advertise : advertises)
-		{
-			AdvertiseResponseDto responseDto = advertiseMapper.toAdvertiseResponseDto(advertise);
-
-			try {
-				categoryDto = masterService.getCategory(advertise.getCategory());
-			}
-			catch (HttpClientErrorException e)
-			{
-				throw new CategoryNotFoundException(advertise.getCategory());
-			}
-			try {
-				statusDto = masterService.getStatus(advertise.getStatus());
-			}catch (HttpClientErrorException e)
-			{
-				throw new StatusNotFoundException(advertise.getStatus());
-			}
-
-			responseDto.setCategory(categoryDto.getCategory());
-			responseDto.setStatus(statusDto.getStatus());
-
-			advertiseResponseListDto.add(responseDto);
-		}
-
-		Predicate<AdvertiseResponseDto> f1 = x -> x.getStatus().equalsIgnoreCase(searchText);
-		list.setAdvertises(advertiseResponseListDto.stream().filter(f1).collect(Collectors.toList()));
-		return ResponseEntity.ok(list);
-	}
-
-	@Override
 	public ResponseEntity<?> search(String searchText) {
 
 		AdvertiseListDto list = new AdvertiseListDto();
-		CategoryDto categoryDto;
-		StatusDto statusDto;
 		List<Advertise> advertises = advertiseRepository.findAll();
 
 		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
+
+		set(advertises, advertiseResponseListDto);
+		Predicate<AdvertiseResponseDto> f1 = x -> x.getTitle().contains(searchText);
+		Predicate<AdvertiseResponseDto> f2 = x -> x.getDescription().contains(searchText);
+		Predicate<AdvertiseResponseDto> f3 = x -> x.getCategory().contains(searchText);
+		Predicate<AdvertiseResponseDto> f4 = x -> x.getStatus().contains(searchText);
+		Predicate<AdvertiseResponseDto> f5 = x -> x.getUserName().contains(searchText);
+
+		
+		list.setAdvertises(advertiseResponseListDto.stream().filter(f1.or(f2).or(f3).or(f4).or(f5)).collect(Collectors.toList()));
+		return ResponseEntity.ok(list);
+	}
+
+	private void set(List<Advertise> advertises, List<AdvertiseResponseDto> advertiseResponseListDto) {
+		CategoryListDto categories = masterService.getCategories();
+
+		StatusListDto statuses = masterService.getStatuses();
 
 		for (Advertise advertise : advertises)
 		{
 			AdvertiseResponseDto responseDto = advertiseMapper.toAdvertiseResponseDto(advertise);
 
-			try {
-				categoryDto = masterService.getCategory(advertise.getCategory());
-			}
-			catch (HttpClientErrorException e)
-			{
-				throw new CategoryNotFoundException(advertise.getCategory());
-			}
-			try {
-				statusDto = masterService.getStatus(advertise.getStatus());
-			}catch (HttpClientErrorException e)
-			{
-				throw new StatusNotFoundException(advertise.getStatus());
-			}
+			CategoryDto categoryDto1 = categories.getCategories().stream().filter(categoryDto -> categoryDto.getId().equals(advertise.getCategory())).findAny().orElse(null);
+			StatusDto statusDto1 = statuses.getStatusList().stream().filter(statusDto -> statusDto.getId().equals(advertise.getStatus())).findAny().orElse(null);
 
-			responseDto.setCategory(categoryDto.getCategory());
-			responseDto.setStatus(statusDto.getStatus());
+			responseDto.setCategory(categoryDto1.getCategory());
+			responseDto.setStatus(statusDto1.getStatus());
 
 			advertiseResponseListDto.add(responseDto);
 		}
-		Predicate<AdvertiseResponseDto> f1 = x -> x.getTitle().contains(searchText);
-		Predicate<AdvertiseResponseDto> f2 = x -> x.getDescription().contains(searchText);
-		Predicate<AdvertiseResponseDto> f3 = x -> x.getCategory().contains(searchText);
-		
-		list.setAdvertises(advertiseResponseListDto.stream().filter(f1.or(f2).or(f3)).collect(Collectors.toList()));
-		return ResponseEntity.ok(list);
 	}
 
+	@Override
+	public ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price, String createdDate,String sortBy, String order) {
 
+		List<Advertise> advertiseList;
+		Pageable paging = PageRequest.of(page,size);
+
+		Advertise filter = new Advertise();
+
+		filter.setCategory(category);
+		filter.setStatus(status);
+		filter.setTitle(title);
+		filter.setPrice(price);
+		filter.setCreatedBy(createdBy);
+		try {
+			filter.setCreatedAt(getDate(createdDate));
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+
+		Specification<Advertise> advertiseSpecification = new AdvertiseSpecification(filter);
+
+		Page<Advertise> advertisePage = advertiseRepository.findAll(advertiseSpecification,paging);
+
+		advertiseList = advertisePage.toList();
+
+		if (sortBy !=null)
+			advertiseList = sort(advertiseList,sortBy);
+		if (order !=null && order.equals("des"))
+			Collections.reverse(advertiseList);
+
+		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
+
+		set(advertiseList, advertiseResponseListDto);
+
+
+		return ResponseEntity.ok(advertiseResponseListDto);
+	}
+
+	public Date getDate(String string) throws ParseException {
+		if (string == null)
+		{
+			return new Date();
+		}
+		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		return formatter.parse(string);
+	}
 	
-
+	public List<Advertise> sort(List<Advertise> list, String sortBy){
+		switch (sortBy){
+			case "category" :
+				list = list.stream().sorted(Comparator.comparingInt(Advertise::getCategory)).collect(Collectors.toList());
+				break;
+			case "postedBy" :
+				list = list.stream().sorted(Comparator.comparing(Advertise::getCreatedBy)).collect(Collectors.toList());
+				break;
+			case "title" :
+				list = list.stream().sorted(Comparator.comparing(Advertise::getTitle)).collect(Collectors.toList());
+				break;
+			case "status" :
+				list = list.stream().sorted(Comparator.comparingInt(Advertise::getStatus)).collect(Collectors.toList());
+				break;
+			case "price" :
+				list = list.stream().sorted(Comparator.comparingDouble(Advertise::getPrice)).collect(Collectors.toList());
+				break;
+			case "createdDate" :
+				list = list.stream().sorted(Comparator.comparing(Advertise::getCreatedAt)).collect(Collectors.toList());
+				break;
+			default:
+		}
+		return list;
+	}
 }

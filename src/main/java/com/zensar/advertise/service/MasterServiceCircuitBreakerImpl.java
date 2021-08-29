@@ -1,9 +1,7 @@
 package com.zensar.advertise.service;
 
-import com.zensar.advertise.dto.CategoryDto;
-import com.zensar.advertise.dto.CategoryListDto;
-import com.zensar.advertise.dto.StatusDto;
-import com.zensar.advertise.dto.StatusListDto;
+import com.zensar.advertise.dto.*;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
@@ -15,9 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-//@Service
-public class MasterServiceImpl implements MasterService{
-
+@Service
+public class MasterServiceCircuitBreakerImpl implements MasterService{
     @Autowired
     RestTemplate restTemplate;
 
@@ -27,6 +24,8 @@ public class MasterServiceImpl implements MasterService{
         return new RestTemplate();
     }
 
+    @Override
+    @CircuitBreaker(name = "STATUS" , fallbackMethod = "fallbackForGetStatus")
     public StatusDto getStatus(Integer id) {
 
         String statusUrl = "status/";
@@ -46,6 +45,8 @@ public class MasterServiceImpl implements MasterService{
         return responseEntity.getBody();
     }
 
+    @Override
+    @CircuitBreaker(name = "CATEGORY" , fallbackMethod = "fallbackForGetCategory")
     public CategoryDto getCategory(Integer id) {
         String categoryUrl = "category/";
 
@@ -64,6 +65,7 @@ public class MasterServiceImpl implements MasterService{
         return responseEntity.getBody();
     }
 
+    @CircuitBreaker(name = "ALL_CATEGORIES" , fallbackMethod = "fallbackForGetCategories")
     @Override
     public CategoryListDto getCategories() {
         String categoryUrl = "category";
@@ -84,6 +86,7 @@ public class MasterServiceImpl implements MasterService{
     }
 
     @Override
+    @CircuitBreaker(name = "ALL_STATUSES" , fallbackMethod = "fallbackForGetStatuses")
     public StatusListDto getStatuses() {
         String statusUrl = "status";
 
@@ -100,5 +103,25 @@ public class MasterServiceImpl implements MasterService{
         );
 
         return responseEntity.getBody();
+    }
+
+    public StatusDto fallbackForGetStatus(Integer id, Throwable throwable){
+        System.out.println("Master Service Failed : "+ throwable);
+        return null;
+    }
+
+    public CategoryDto fallbackForGetCategory(Integer id,Throwable throwable){
+        System.out.println("Master Service Failed : "+ throwable);
+        return null;
+    }
+
+    public CategoryListDto fallbackForGetCategories(Throwable throwable){
+        System.out.println("Master Service Failed : "+ throwable);
+        return null;
+    }
+
+    public StatusListDto fallbackForGetStatuses(Throwable throwable){
+        System.out.println("Master Service Failed : "+ throwable);
+        return null;
     }
 }

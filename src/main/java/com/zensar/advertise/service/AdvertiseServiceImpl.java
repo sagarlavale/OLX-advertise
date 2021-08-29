@@ -21,7 +21,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,7 +36,7 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 	MasterService masterService;
 
 	@Autowired
-	UserServiceImpl userService;
+	UserService userService;
 
 	@Override
 	public ResponseEntity<?> post(String token, AdvertiseRequestDto requestDto) {
@@ -75,9 +74,9 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		advertise.setStatus(requestDto.getStatusId());
 
 		advertise.setCreatedById(userDto.getId());
-		advertise.setCreatedBy(userDto.getFirstName()+userDto.getLastName());
+		advertise.setCreatedBy(userDto.getFirstName()+" "+userDto.getLastName());
 		advertise.setUpdatedById(userDto.getId());
-		advertise.setUpdatedBy(userDto.getFirstName()+userDto.getLastName());
+		advertise.setUpdatedBy(userDto.getFirstName()+" "+userDto.getLastName());
 
 		AdvertiseResponseDto advertiseResponseDto = advertiseMapper.toAdvertiseResponseDto(advertiseRepository.save(advertise));
 
@@ -119,8 +118,10 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 
 		Advertise advertise = advertiseMapper.toAdvertise(requestDto);
 
+		advertise.setCreatedById(userDto.getId());
+		advertise.setCreatedBy(userDto.getFirstName()+" "+userDto.getLastName());
 		advertise.setUpdatedById(userDto.getId());
-		advertise.setUpdatedBy(userDto.getFirstName()+userDto.getLastName());
+		advertise.setUpdatedBy(userDto.getFirstName()+" "+userDto.getLastName());
 
 		AdvertiseResponseDto advertiseResponseDto = advertiseMapper.toAdvertiseResponseDto(advertiseRepository.save(advertise));
 
@@ -133,8 +134,6 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 	@Override
 	public ResponseEntity<?> get(String token) {
 		UserDto userDto;
-		CategoryDto categoryDto;
-		StatusDto statusDto;
 		try {
 			userDto = userService.getUserInfo(token);
 		}
@@ -143,35 +142,29 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 			throw new InvalidTokenException(token);
 		}
 
+		CategoryListDto categories = masterService.getCategories();
+
+		StatusListDto statuses = masterService.getStatuses();
+
 		List<Advertise> advertiseList = advertiseRepository.findAllByUser(userDto.getId());
 
-		AdvertiseListDto advertiseListDto1 = new AdvertiseListDto();
+		List<AdvertiseResponseDto> advertiseResponseDtos = new ArrayList<>();
 
 		for (Advertise dto : advertiseList)
 		{
-			try {
-				categoryDto = masterService.getCategory(dto.getCategory());
-			}
-			catch (HttpClientErrorException e)
-			{
-				throw new CategoryNotFoundException(dto.getCategory());
-			}
-			try {
-				statusDto = masterService.getStatus(dto.getStatus());
-			}catch (HttpClientErrorException e)
-			{
-				throw new StatusNotFoundException(dto.getStatus());
-			}
+			CategoryDto categoryDto1 = categories.getCategories().stream().filter(categoryDto -> categoryDto.getId().equals(dto.getCategory())).findAny().orElse(null);
+			StatusDto statusDto1 = statuses.getStatusList().stream().filter(statusDto -> statusDto.getId().equals(dto.getStatus())).findAny().orElse(null);
+
 
 			AdvertiseResponseDto responseDto = advertiseMapper.toAdvertiseResponseDto(dto);
-			responseDto.setCategory(categoryDto.getCategory());
-			responseDto.setStatus(statusDto.getStatus());
+			responseDto.setCategory(categoryDto1.getCategory());
+			responseDto.setStatus(statusDto1.getStatus());
 
-			advertiseListDto1.getAdvertises().add(responseDto);
+			advertiseResponseDtos.add(responseDto);
 		}
 
 
-		return ResponseEntity.ok(advertiseListDto1);
+		return ResponseEntity.ok(new AdvertiseListDto(advertiseResponseDtos));
 	}
 
 	@Override
@@ -283,20 +276,25 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 	@Override
 	public ResponseEntity<?> search(String searchText) {
 
-		AdvertiseListDto list = new AdvertiseListDto();
-		List<Advertise> advertises = advertiseRepository.findAll();
+		Advertise filter = new Advertise();
+		//filter.setCategory(searchText);
+		//filter.setStatus(searchText);
+		filter.setTitle(searchText);
+		filter.setDescription(searchText);
+		//filter.setPrice(searchText);
+		filter.setCreatedBy(searchText);
+
+
+		Specification<Advertise> advertiseSpecification = new AdvertiseSpecification(filter);
+
+		List<Advertise> advertisePage = advertiseRepository.findAll(advertiseSpecification);
 
 		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
 
-		set(advertises, advertiseResponseListDto);
-		Predicate<AdvertiseResponseDto> f1 = x -> x.getTitle().contains(searchText);
-		Predicate<AdvertiseResponseDto> f2 = x -> x.getDescription().contains(searchText);
-		Predicate<AdvertiseResponseDto> f3 = x -> x.getCategory().contains(searchText);
-		Predicate<AdvertiseResponseDto> f4 = x -> x.getStatus().contains(searchText);
-		Predicate<AdvertiseResponseDto> f5 = x -> x.getUserName().contains(searchText);
+		AdvertiseListDto list = new AdvertiseListDto();
 
-		
-		list.setAdvertises(advertiseResponseListDto.stream().filter(f1.or(f2).or(f3).or(f4).or(f5)).collect(Collectors.toList()));
+		set(advertisePage,advertiseResponseListDto);
+
 		return ResponseEntity.ok(list);
 	}
 
@@ -320,7 +318,7 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 	}
 
 	@Override
-	public ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price, String createdDate,String sortBy, String order) {
+	public ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price,String dateCondition, String onDate,String fromDate, String toDate,String sortBy, String order) {
 
 		List<Advertise> advertiseList;
 		Pageable paging = PageRequest.of(page,size);
@@ -332,10 +330,16 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		filter.setTitle(title);
 		filter.setPrice(price);
 		filter.setCreatedBy(createdBy);
-		try {
-			filter.setCreatedAt(getDate(createdDate));
-		} catch (ParseException e) {
-			e.printStackTrace();
+		if (dateCondition !=null && dateCondition.equals("GREATER THAN"))
+		{
+			if (onDate !=null)
+			{
+				try {
+					filter.setCreatedAt(getDate(onDate));
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 		Specification<Advertise> advertiseSpecification = new AdvertiseSpecification(filter);

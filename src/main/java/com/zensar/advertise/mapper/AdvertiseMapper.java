@@ -11,6 +11,8 @@ import java.util.List;
 @Mapper(componentModel="spring")
 public interface AdvertiseMapper {
 
+    @Mapping(target = "category", source = "categoryId")
+    @Mapping(target = "status", source = "statusId")
     Advertise toAdvertise(AdvertiseRequestDto advertiseRequestDto);
 
     @Mapping(target = "userName", source = "createdBy")

@@ -7,7 +7,7 @@ import com.zensar.advertise.dto.StatusListDto;
 
 public interface MasterService {
 
-    String MASTER_SERVICE_URL = "http://localhost:8000/master/";
+    String MASTER_SERVICE_URL = "http://masterdata-service/master/";
 
     StatusDto getStatus(Integer id);
 

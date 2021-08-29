@@ -4,7 +4,7 @@ import com.zensar.advertise.dto.UserDto;
 
 public interface UserService {
 
-    String USER_SERVICE_URL = "http://localhost:7000/login";
+    String USER_SERVICE_URL = "http://login-service/login";
 
     UserDto getUserInfo(String token);
 

@@ -62,7 +62,7 @@ public class AdvertiseController {
 		return advertiseService.search(searchText);
 	}
 	
-	@DeleteMapping(value = "/user/{postId}" , consumes = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE},produces = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE})
+	@DeleteMapping(value = "/user/{postId}" , produces = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE})
 	@ApiOperation(value = "Delete Ad", notes =  "This Service Deletes the Ad based on ID from OLX Application")
 	@ResponseBody
 	public ResponseEntity<?> delete(@RequestHeader("Authorization") String token,@ApiParam(value = "Post ID", required = true)@PathVariable Integer postId) {
@@ -77,12 +77,15 @@ public class AdvertiseController {
 									  @RequestParam(required = false) Integer category,
 									  @RequestParam(required = false) Integer status,
 									  @RequestParam(required = false) Double price,
-									  @RequestParam(required = false) String createdDate,
+									  @RequestParam(required = false) String dateCondition,
+									  @RequestParam(required = false) String onDate,
+									  @RequestParam(required = false) String fromDate,
+									  @RequestParam(required = false) String toDate,
 									  @RequestParam(required = false) String sortBy,
 									  @RequestParam(required = false) String order,
 									  @RequestParam(defaultValue = "0") int page,
 									  @RequestParam(defaultValue = "3") int size) {
-		return advertiseService.findAll(page,size,title,postedBy,category,status,price,createdDate,sortBy,order);
+		return advertiseService.findAll(page,size,title,postedBy,category,status,price,dateCondition,onDate,fromDate,toDate,sortBy,order);
 	}
 
 }

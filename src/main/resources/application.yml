@@ -5,21 +5,10 @@ server:
 spring:
   application:
     name: advertise-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/advertise
-    username: root
-    password: root
-  jpa:
-    hibernate:
-     ddl-auto: update
-    properties:
-      hibernate:
-        dialect : org.hibernate.dialect.MySQL5InnoDBDialect
-        namingStrategy: org.hibernate.cfg.PhysicalNamingStrategy
-        jdbc:
-          lob:
-            non_contextual_creation: true
-    show-sql: true
+  config:
+    import: configserver:http://localhost:8888
+  zipkin:
+    base-url: http://localhost:9411
 eureka:
   instance:
     instance-id: ${spring.application.name}:${random.uuid}
@@ -29,3 +18,53 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://${eureka.instance.hostname}:8761/eureka
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+resilience4j:
+  circuitbreaker:
+    instances:
+      USER_INFO:
+        registerHealthIndicator: true
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 5s
+      STATUS:
+        registerHealthIndicator: true
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 5s
+      CATEGORY:
+        registerHealthIndicator: true
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 5s
+      ALL_CATEGORIES:
+        registerHealthIndicator: true
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 5s
+      ALL_STATUSES:
+        registerHealthIndicator: true
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 5s

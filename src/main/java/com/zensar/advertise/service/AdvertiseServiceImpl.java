@@ -274,28 +274,34 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 	}
 
 	@Override
-	public ResponseEntity<?> search(String searchText) {
+	public ResponseEntity<?> filter(int page, int size, String title, String createdBy, Integer category, Integer status, Double price,String dateCondition, String onDate,String fromDate, String toDate,String sortBy, String order) {
 
-		Advertise filter = new Advertise();
-		//filter.setCategory(searchText);
-		//filter.setStatus(searchText);
-		filter.setTitle(searchText);
-		filter.setDescription(searchText);
-		//filter.setPrice(searchText);
-		filter.setCreatedBy(searchText);
+		List<Advertise> advertiseList;
 
+		advertiseList = advertiseRepository.filter(page,size,title,createdBy,category,status,price,dateCondition,onDate,fromDate,toDate);
 
-		Specification<Advertise> advertiseSpecification = new AdvertiseSpecification(filter);
-
-		List<Advertise> advertisePage = advertiseRepository.findAll(advertiseSpecification);
+		if (sortBy !=null)
+			advertiseList = sort(advertiseList,sortBy);
+		if (order !=null && order.equals("des"))
+			Collections.reverse(advertiseList);
 
 		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
 
-		AdvertiseListDto list = new AdvertiseListDto();
+		set(advertiseList, advertiseResponseListDto);
+
+		return ResponseEntity.ok(new AdvertiseListDto(advertiseResponseListDto));
+	}
+
+	@Override
+	public ResponseEntity<?> search(String searchText) {
+
+		List<Advertise> advertisePage = advertiseRepository.search(searchText);
+
+		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
 
 		set(advertisePage,advertiseResponseListDto);
 
-		return ResponseEntity.ok(list);
+		return ResponseEntity.ok(new AdvertiseListDto(advertiseResponseListDto));
 	}
 
 	private void set(List<Advertise> advertises, List<AdvertiseResponseDto> advertiseResponseListDto) {
@@ -317,58 +323,7 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		}
 	}
 
-	@Override
-	public ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price,String dateCondition, String onDate,String fromDate, String toDate,String sortBy, String order) {
 
-		List<Advertise> advertiseList;
-		Pageable paging = PageRequest.of(page,size);
-
-		Advertise filter = new Advertise();
-
-		filter.setCategory(category);
-		filter.setStatus(status);
-		filter.setTitle(title);
-		filter.setPrice(price);
-		filter.setCreatedBy(createdBy);
-		if (dateCondition !=null && dateCondition.equals("GREATER THAN"))
-		{
-			if (onDate !=null)
-			{
-				try {
-					filter.setCreatedAt(getDate(onDate));
-				} catch (ParseException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-		Specification<Advertise> advertiseSpecification = new AdvertiseSpecification(filter);
-
-		Page<Advertise> advertisePage = advertiseRepository.findAll(advertiseSpecification,paging);
-
-		advertiseList = advertisePage.toList();
-
-		if (sortBy !=null)
-			advertiseList = sort(advertiseList,sortBy);
-		if (order !=null && order.equals("des"))
-			Collections.reverse(advertiseList);
-
-		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
-
-		set(advertiseList, advertiseResponseListDto);
-
-
-		return ResponseEntity.ok(advertiseResponseListDto);
-	}
-
-	public Date getDate(String string) throws ParseException {
-		if (string == null)
-		{
-			return new Date();
-		}
-		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-		return formatter.parse(string);
-	}
 	
 	public List<Advertise> sort(List<Advertise> list, String sortBy){
 		switch (sortBy){
@@ -394,4 +349,55 @@ public class AdvertiseServiceImpl implements AdvertiseService{
 		}
 		return list;
 	}
+
+
+
+
+
+	/*@Override
+	public ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price,String dateCondition, String onDate,String fromDate, String toDate,String sortBy, String order) {
+
+		List<Advertise> advertiseList = new ArrayList<>();
+		Pageable paging = PageRequest.of(page,size);
+		if (title ==null && createdBy == null & category == null && status == null && price == null && dateCondition == null && onDate == null && fromDate ==null && toDate == null){
+			Page<Advertise> advertisePage = advertiseRepository.findAll(paging);
+			advertiseList = advertisePage.toList();
+		}
+		else if(dateCondition == null)
+		{
+			Advertise filter = new Advertise();
+
+			filter.setCategory(category);
+			filter.setStatus(status);
+			filter.setTitle(title);
+			filter.setPrice(price);
+			filter.setCreatedBy(createdBy);
+
+			Specification<Advertise> advertiseSpecification = new AdvertiseSpecification(filter);
+
+			Page<Advertise> advertisePage = advertiseRepository.findAll(advertiseSpecification,paging);
+
+			advertiseList = advertisePage.toList();
+		}
+		if (sortBy !=null)
+			advertiseList = sort(advertiseList,sortBy);
+		if (order !=null && order.equals("des"))
+			Collections.reverse(advertiseList);
+
+		List<AdvertiseResponseDto> advertiseResponseListDto = new ArrayList<>();
+
+		set(advertiseList, advertiseResponseListDto);
+
+
+		return ResponseEntity.ok(advertiseResponseListDto);
+	}*/
+
+	/*public Date getDate(String string) throws ParseException {
+		if (string == null)
+		{
+			return null;
+		}
+		DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		return formatter.parse(string);
+	}*/
 }

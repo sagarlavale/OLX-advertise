@@ -22,5 +22,7 @@ public interface AdvertiseService {
 
 	ResponseEntity<?> delete(String token, Integer postId);
 
-	ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price,String dateCondition, String onDate,String fromDate, String toDate,String sortBy, String order);
+	//ResponseEntity<?> findAll(int page, int size, String title, String createdBy, Integer category, Integer status, Double price,String dateCondition, String onDate,String fromDate, String toDate,String sortBy, String order);
+
+	ResponseEntity<?> filter(int page, int size, String title, String createdBy, Integer category, Integer status, Double price,String dateCondition, String onDate,String fromDate, String toDate,String sortBy, String order);
 }

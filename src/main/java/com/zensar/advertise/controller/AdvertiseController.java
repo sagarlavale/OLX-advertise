@@ -69,23 +69,23 @@ public class AdvertiseController {
 		return advertiseService.delete(token,postId);
 	}
 
-	@GetMapping(value = "/search/filter" ,produces = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE})
+	@GetMapping(value = "/filter" ,produces = {MediaType.APPLICATION_JSON_VALUE,MediaType.APPLICATION_XML_VALUE})
 	@ApiOperation(value = "Search By Criteria", notes =  "This Service Returns List of Ads based on Particular Search Criteria from OLX Application")
 	@ResponseBody
-	public ResponseEntity<?> findAll( @RequestParam(required = false) String title,
-									  @RequestParam(required = false) String postedBy,
-									  @RequestParam(required = false) Integer category,
-									  @RequestParam(required = false) Integer status,
-									  @RequestParam(required = false) Double price,
-									  @RequestParam(required = false) String dateCondition,
-									  @RequestParam(required = false) String onDate,
-									  @RequestParam(required = false) String fromDate,
-									  @RequestParam(required = false) String toDate,
-									  @RequestParam(required = false) String sortBy,
-									  @RequestParam(required = false) String order,
-									  @RequestParam(defaultValue = "0") int page,
-									  @RequestParam(defaultValue = "3") int size) {
-		return advertiseService.findAll(page,size,title,postedBy,category,status,price,dateCondition,onDate,fromDate,toDate,sortBy,order);
+	public ResponseEntity<?> filter(@RequestParam(required = false) String title,
+									@RequestParam(required = false) String postedBy,
+									@RequestParam(required = false) Integer category,
+									@RequestParam(required = false) Integer status,
+									@RequestParam(required = false) Double price,
+									@RequestParam(required = false) String dateCondition,
+									@RequestParam(required = false) String onDate,
+									@RequestParam(required = false) String fromDate,
+									@RequestParam(required = false) String toDate,
+									@RequestParam(required = false) String sortBy,
+									@RequestParam(required = false) String order,
+									@RequestParam(defaultValue = "0") int page,
+									@RequestParam(defaultValue = "3") int size) {
+		return advertiseService.filter(page,size,title,postedBy,category,status,price,dateCondition,onDate,fromDate,toDate,sortBy,order);
 	}
 
 }
